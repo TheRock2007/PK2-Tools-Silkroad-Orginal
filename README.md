@@ -32,15 +32,9 @@ The tool includes four main workspaces:
 
 This release keeps the project simple and focused by using only one runtime profile:
 
-```text
-Silkroad-Orginal
-```
+
 
 The old separated profile below was removed from the source:
-
-```text
-Silkroad-Qadron
-```
 
 ---
 
