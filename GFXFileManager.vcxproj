@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1EFDFA72-3AFB-4383-935F-43E5B83D1CD6}</ProjectGuid>
+    <RootNamespace>GFXFileManager</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v145</PlatformToolset>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v145</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>if not "%25SRO_DIR%25"=="" copy /Y "$(TargetPath)" "%25SRO_DIR%25\"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\commandline.cpp" />
+    <ClCompile Include="src\CPFileManager.cpp" />
+    <ClCompile Include="src/dllmain.cpp" />
+    <ClCompile Include="src/IFileManager.cpp" />
+    <ClCompile Include="src\CWFileManager.cpp" />
+    <ClCompile Include="src\debug.cpp" />
+    <ClCompile Include="src\GFXDllCreateObject.cpp" />
+    <ClCompile Include="src\GFXDllReleaseObject.cpp" />
+    <ClCompile Include="src\GFXInfo.cpp" />
+    <ClCompile Include="src\PK2PayloadCrypto.cpp" />
+    <ClCompile Include="src\PK2ToolsNativeApi.cpp" />
+    <ClCompile Include="src\EncryptedFiles.cpp" />
+    <ClCompile Include="src\NonEncryptedFiles.cpp" />
+    <ClCompile Include="src\pk2\blowfish.cpp" />
+    <ClCompile Include="src\pk2\PK2Reader.cpp" />
+    <ClCompile Include="src\pk2\PK2Writer.cpp" />
+    <ClCompile Include="src\pk2\shared_io.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src/IFileManager.h" />
+    <ClInclude Include="src/CJArchiveFm.h" />
+    <ClInclude Include="src\search.h" />
+    <ClInclude Include="src\commandine.h" />
+    <ClInclude Include="src\CWFileManager.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\DialogData.h" />
+    <ClInclude Include="src\eCallbackState.h" />
+    <ClInclude Include="src\GFXInfo.h" />
+    <ClInclude Include="src\LoggingFileManager.h" />
+    <ClInclude Include="src\PK2PayloadCrypto.h" />
+    <ClInclude Include="src\EncKeyDef.h" />
+    <ClInclude Include="src\FilenameLists.h" />
+    <ClInclude Include="src\pk2\blowfish.h" />
+    <ClInclude Include="src\pk2\PK2.h" />
+    <ClInclude Include="src\pk2\PK2Reader.h" />
+    <ClInclude Include="src\pk2\PK2Writer.h" />
+    <ClInclude Include="src\pk2\shared_io.h" />
+    <ClInclude Include="src\pk2\shared_types.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\CPFileManager.h" />
+    <None Include="export.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,2 @@
+
+#include "LoggingFileManager.h"

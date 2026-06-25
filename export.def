@@ -1,0 +1,11 @@
+﻿LIBRARY
+EXPORTS
+	GFXDllCreateObject
+	GFXDllReleaseObject
+	GFXFMInfo
+	PK2Tools_SetBlowfishKeyW
+    PK2Tools_ListPk2W
+	PK2Tools_BuildPk2W
+	PK2Tools_CryptPk2W
+	PK2Tools_ImportFolderW
+	PK2Tools_ExtractPk2W

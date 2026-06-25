@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <UnifiedBuildRoot>$(MSBuildThisFileDirectory)build\</UnifiedBuildRoot>
+    <UnifiedOutputRoot>$(MSBuildThisFileDirectory)build\$(Configuration)\</UnifiedOutputRoot>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildThisFileDirectory)build\**;$(MSBuildProjectDirectory)\bin\**;$(MSBuildProjectDirectory)\obj\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)'=='.vcxproj'">
+    <OutDir>$(UnifiedOutputRoot)</OutDir>
+    <IntDir>$(UnifiedOutputRoot)obj\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)'=='.csproj'">
+    <OutputPath>$(UnifiedOutputRoot)</OutputPath>
+    <BaseIntermediateOutputPath>$(UnifiedOutputRoot)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+</Project>

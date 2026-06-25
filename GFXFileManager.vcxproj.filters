@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{69990b3f-ad0e-47fe-bb17-678fabf340ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source\PackFileManager">
+      <UniqueIdentifier>{7cc1f0fb-7133-4871-b0b3-978393f8e544}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DiskFileManager">
+      <UniqueIdentifier>{93907db4-2669-4826-843c-cd86b19e1430}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\CPFileManager.cpp">
+      <Filter>Source\PackFileManager</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CWFileManager.cpp">
+      <Filter>Source\DiskFileManager</Filter>
+    </ClCompile>
+    <ClCompile Include="src\commandline.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debug.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src/dllmain.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GFXDllCreateObject.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GFXInfo.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GFXDllReleaseObject.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src/IFileManager.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\CWFileManager.h">
+      <Filter>Source\DiskFileManager</Filter>
+    </ClInclude>
+    <ClInclude Include="src\commandine.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GFXInfo.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debug.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src/CJArchiveFm.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DialogData.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src\eCallbackState.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src/IFileManager.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src\LoggingFileManager.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="src\search.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\CPFileManager.h">
+      <Filter>Source\PackFileManager</Filter>
+    </None>
+    <None Include="export.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\PK2PayloadCrypto.cpp" />
+    <ClCompile Include="src\EncryptedFiles.cpp" />
+    <ClCompile Include="src\NonEncryptedFiles.cpp" />
+    <ClCompile Include="src\pk2\blowfish.cpp" />
+    <ClCompile Include="src\pk2\PK2Reader.cpp" />
+    <ClCompile Include="src\pk2\shared_io.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\PK2PayloadCrypto.h" />
+    <ClInclude Include="src\EncKeyDef.h" />
+    <ClInclude Include="src\FilenameLists.h" />
+    <ClInclude Include="src\pk2\blowfish.h" />
+    <ClInclude Include="src\pk2\PK2.h" />
+    <ClInclude Include="src\pk2\PK2Reader.h" />
+    <ClInclude Include="src\pk2\shared_io.h" />
+    <ClInclude Include="src\pk2\shared_types.h" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>PK2 Tools</AssemblyName>
+    <Product>PK2 Tools</Product>
+    <Title>PK2 Tools</Title>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>true</Prefer32Bit>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishDir>..\dist\$(Configuration)\</PublishDir>
+    <NoWarn>$(NoWarn);WFO1000</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\Silkroad-Orginal\README.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Silkroad-Orginal\README.txt" />
+    <Content Include="..\Silkroad-Orginal\GFXFileManager.dll" Condition="Exists('..\Silkroad-Orginal\GFXFileManager.dll')" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Silkroad-Orginal\GFXFileManager.dll" />
+  </ItemGroup>
+
+  <Target Name="BuildOriginalGfxFileManager" BeforeTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <MSBuild Projects="..\GFXFileManager.vcxproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);Platform=Win32"
+             Condition="Exists('..\GFXFileManager.vcxproj')" />
+    <MakeDir Directories="..\Silkroad-Orginal" />
+    <ItemGroup>
+      <OriginalNativeGfxEngine Include="..\build\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\build\$(Configuration)\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\$(Configuration)\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\Win32\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\Win32\$(Configuration)\GFXFileManager.dll')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OriginalNativeGfxEngine)" DestinationFolder="..\Silkroad-Orginal" SkipUnchangedFiles="true" Condition="@(OriginalNativeGfxEngine) != ''" />
+  </Target>
+
+  <Target Name="CopyOriginalGfxFileManagerToOutput" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <ItemGroup>
+      <OriginalNativeGfxEngine Include="..\Silkroad-Orginal\GFXFileManager.dll" Condition="Exists('..\Silkroad-Orginal\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\build\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\build\$(Configuration)\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\$(Configuration)\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\Win32\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\Win32\$(Configuration)\GFXFileManager.dll')" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutDir)Silkroad-Orginal" />
+    <Copy SourceFiles="@(OriginalNativeGfxEngine)" DestinationFolder="$(OutDir)Silkroad-Orginal" SkipUnchangedFiles="true" Condition="@(OriginalNativeGfxEngine) != ''" />
+  </Target>
+
+  <Target Name="CopyOriginalGfxFileManagerToPublish" AfterTargets="Publish" Condition="'$(OS)' == 'Windows_NT'">
+    <ItemGroup>
+      <OriginalNativeGfxEngine Include="..\Silkroad-Orginal\GFXFileManager.dll" Condition="Exists('..\Silkroad-Orginal\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\build\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\build\$(Configuration)\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\$(Configuration)\GFXFileManager.dll')" />
+      <OriginalNativeGfxEngine Include="..\Win32\$(Configuration)\GFXFileManager.dll" Condition="Exists('..\Win32\$(Configuration)\GFXFileManager.dll')" />
+    </ItemGroup>
+    <MakeDir Directories="$(PublishDir)Silkroad-Orginal" Condition="'$(PublishDir)' != ''" />
+    <Copy SourceFiles="@(OriginalNativeGfxEngine)" DestinationFolder="$(PublishDir)Silkroad-Orginal" SkipUnchangedFiles="true" Condition="@(OriginalNativeGfxEngine) != '' and '$(PublishDir)' != ''" />
+  </Target>
+</Project>
