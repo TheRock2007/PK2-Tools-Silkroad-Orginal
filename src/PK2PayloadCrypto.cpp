@@ -1,9 +1,11 @@
 #include "PK2PayloadCrypto.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <vector>
 
 namespace
@@ -117,8 +119,20 @@ void PK2PayloadCrypto_Initialize()
 
 bool PK2PayloadCrypto_ShouldDecrypt(const std::string& path)
 {
-    (void)path;
-    return true;
+    // Keep Media\type.txt readable/plain inside every PK2.
+    // In Media.pk2 this may appear internally as either Media\type.txt or type.txt.
+    // All other payloads can be protected and will be decrypted at runtime.
+    std::string normalized = path;
+    std::replace(normalized.begin(), normalized.end(), '/', '\\');
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char ch)
+    {
+        return static_cast<char>(std::tolower(ch));
+    });
+    while(!normalized.empty() && normalized.front() == '\\')
+    {
+        normalized.erase(normalized.begin());
+    }
+    return normalized != "media\\type.txt" && normalized != "type.txt";
 }
 
 void PK2PayloadCrypto_DecryptBuffer(char* buffer, int length)

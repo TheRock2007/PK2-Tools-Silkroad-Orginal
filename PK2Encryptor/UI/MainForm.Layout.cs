@@ -125,7 +125,7 @@ public sealed partial class MainForm : Form
         logoGrid.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = "PK2 Tools",
+            Text = T("PK2 Tools"),
             ForeColor = TextDark,
             Font = new Font("Segoe UI Semibold", 15.5f, FontStyle.Bold),
             TextAlign = ContentAlignment.BottomLeft,
@@ -134,7 +134,7 @@ public sealed partial class MainForm : Form
         logoGrid.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = "Studio",
+            Text = T("Studio"),
             ForeColor = TextMuted,
             Font = new Font("Segoe UI", 9.4f),
             TextAlign = ContentAlignment.MiddleLeft,
@@ -143,7 +143,7 @@ public sealed partial class MainForm : Form
         logoGrid.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = "Secure • Extract • Inject • Build",
+            Text = T("Build • Extract • Inject • Secure"),
             ForeColor = Color.FromArgb(_theme.IsDark ? 150 : 180, _theme.Accent),
             Font = new Font("Segoe UI Semibold", 8.4f, FontStyle.Bold),
             TextAlign = ContentAlignment.TopLeft,
@@ -154,7 +154,7 @@ public sealed partial class MainForm : Form
         var navCaption = new Label
         {
             Dock = DockStyle.Fill,
-            Text = "WORKSPACE",
+            Text = T("WORKSPACE"),
             ForeColor = TextMuted,
             Font = new Font("Segoe UI Semibold", 8.4f, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft,
@@ -191,7 +191,7 @@ public sealed partial class MainForm : Form
         var version = new Label
         {
             Dock = DockStyle.Fill,
-            Text = "GFX Compatible\r\nPayload Secure      ●\r\nv1.0.0",
+            Text = T("GFX Compatible\r\nPayload Secure      ●\r\nv1.0.0"),
             ForeColor = TextMuted,
             Font = new Font("Segoe UI", 9f),
             TextAlign = ContentAlignment.MiddleLeft,
@@ -211,7 +211,7 @@ public sealed partial class MainForm : Form
         var text = new Label
         {
             Dock = DockStyle.Fill,
-            Text = "PK2 workflow\r\n• Encrypt PK2 or Folder\r\n• Extract PK2 files\r\n• Import and Build PK2",
+            Text = T("PK2 workflow\r\n• Build PK2 archives\r\n• Extract PK2 files\r\n• Import and secure payloads"),
             ForeColor = TextMuted,
             Font = new Font("Segoe UI", 9f),
             TextAlign = ContentAlignment.MiddleLeft
@@ -225,7 +225,7 @@ public sealed partial class MainForm : Form
         var button = new ModernButton
         {
             Dock = DockStyle.Fill,
-            Text = text,
+            Text = T(text),
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI Semibold", 10.2f, FontStyle.Bold),
             Margin = new Padding(0, 4, 0, 4),
@@ -260,7 +260,7 @@ public sealed partial class MainForm : Form
         };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 74));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 900));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 820));
         grid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         header.Controls.Add(grid);
 
@@ -303,7 +303,7 @@ public sealed partial class MainForm : Form
         titleGrid.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = "PK2 Tools - Studio",
+            Text = T("PK2 Tools - Studio"),
             Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
             ForeColor = TextDark,
             TextAlign = ContentAlignment.BottomLeft,
@@ -332,15 +332,14 @@ public sealed partial class MainForm : Form
         var toolGrid = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 5,
+            ColumnCount = 4,
             RowCount = 2,
             BackColor = header.SurfaceColor,
             Margin = new Padding(0)
         };
-        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
-        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
-        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
+        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 185));
+        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 185));
+        toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
         toolGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         toolGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         toolGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -409,52 +408,29 @@ public sealed partial class MainForm : Form
         };
         toolGrid.Controls.Add(_languageBox, 1, 1);
 
-        var keyLabel = new Label
+
+
+        var blowfishKeyLabel = new Label
         {
             Dock = DockStyle.Fill,
-            Text = T("PK2 BLOWFISH KEY"),
+            Text = T("BLOWFISH KEY"),
             ForeColor = TextMuted,
             TextAlign = ContentAlignment.BottomLeft,
             Font = new Font("Segoe UI Semibold", 8.3f, FontStyle.Bold),
             AutoEllipsis = true,
             Margin = new Padding(0, 0, 14, 0)
         };
-        RegisterLocalizedText(keyLabel, "PK2 BLOWFISH KEY");
-        toolGrid.Controls.Add(keyLabel, 2, 0);
+        RegisterLocalizedText(blowfishKeyLabel, "BLOWFISH KEY");
+        toolGrid.Controls.Add(blowfishKeyLabel, 2, 0);
 
-        ConfigurePathBox(_pk2BlowfishKeyBox, "Default PK2 Blowfish key: 169841");
-        _pk2BlowfishKeyBox.Margin = new Padding(0, 2, 14, 12);
-        _pk2BlowfishKeyBox.MinimumSize = new Size(0, 34);
-        _pk2BlowfishKeyBox.Text = string.IsNullOrWhiteSpace(_settings.Pk2BlowfishKey) ? DefaultPk2BlowfishKey : _settings.Pk2BlowfishKey.Trim();
-        _pk2BlowfishKeyBox.TextChanged += (_, _) =>
-        {
-            ApplyCurrentPk2BlowfishKey();
-            SaveAppSettings();
-        };
-        ApplyCurrentPk2BlowfishKey();
-        toolGrid.Controls.Add(_pk2BlowfishKeyBox, 2, 1);
-
-        var projectCaption = new Label
-        {
-            Dock = DockStyle.Fill,
-            Text = T("PROJECT"),
-            ForeColor = TextMuted,
-            TextAlign = ContentAlignment.BottomLeft,
-            Font = new Font("Segoe UI Semibold", 8.3f, FontStyle.Bold),
-            AutoEllipsis = true,
-            Margin = new Padding(0, 0, 14, 0)
-        };
-        RegisterLocalizedText(projectCaption, "PROJECT");
-        toolGrid.Controls.Add(projectCaption, 3, 0);
-
-        _activeProjectLabel.Dock = DockStyle.Fill;
-        _activeProjectLabel.Text = _activeProject.DisplayName;
-        _activeProjectLabel.ForeColor = _theme.Accent;
-        _activeProjectLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _activeProjectLabel.Font = new Font("Segoe UI Semibold", 9.4f, FontStyle.Bold);
-        _activeProjectLabel.AutoEllipsis = true;
-        _activeProjectLabel.Margin = new Padding(0, 2, 14, 12);
-        toolGrid.Controls.Add(_activeProjectLabel, 3, 1);
+        ConfigurePathBox(_blowfishKeyBox, "Default: 169841");
+        _blowfishKeyBox.Margin = new Padding(0, 2, 14, 12);
+        _blowfishKeyBox.MinimumSize = new Size(0, 34);
+        _blowfishKeyBox.Text = string.IsNullOrWhiteSpace(_settings.BlowfishKey) ? "169841" : _settings.BlowfishKey;
+        _blowfishKeyBox.MaxLength = 56;
+        RegisterLocalizedPlaceholder(_blowfishKeyBox, "Default: 169841");
+        _blowfishKeyBox.TextChanged += (_, _) => SaveAppSettings();
+        toolGrid.Controls.Add(_blowfishKeyBox, 2, 1);
 
         var badge = CreateCard(strong: true, accentLine: false, radius: 16);
         badge.Margin = new Padding(0, 4, 0, 10);
@@ -485,7 +461,7 @@ public sealed partial class MainForm : Form
         badgeGrid.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = "GFX Compatible",
+            Text = T("GFX Compatible"),
             TextAlign = ContentAlignment.BottomLeft,
             Font = new Font("Segoe UI Semibold", 9.4f, FontStyle.Bold),
             ForeColor = TextDark,
@@ -494,7 +470,7 @@ public sealed partial class MainForm : Form
         badgeGrid.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = "Payload Secure",
+            Text = T("Payload Secure"),
             TextAlign = ContentAlignment.TopLeft,
             Font = new Font("Segoe UI", 9f),
             ForeColor = TextMuted,
@@ -510,7 +486,7 @@ public sealed partial class MainForm : Form
         };
         badgeGrid.Controls.Add(badgeDot, 2, 0);
         badgeGrid.SetRowSpan(badgeDot, 2);
-        toolGrid.Controls.Add(badge, 4, 0);
+        toolGrid.Controls.Add(badge, 3, 0);
         toolGrid.SetRowSpan(badge, 2);
 
         return header;
@@ -531,7 +507,7 @@ public sealed partial class MainForm : Form
         BuildExtractorPage();
         BuildImportPage();
         BuildBuilderPage();
-        ShowWorkspacePage(_encryptorPage);
+        ShowWorkspacePage(_importPage);
         return contentCard;
     }
 
@@ -540,7 +516,7 @@ public sealed partial class MainForm : Form
         var button = new ModernButton
         {
             Dock = DockStyle.Fill,
-            Text = text,
+            Text = T(text),
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font("Segoe UI Semibold", 10.2f, FontStyle.Bold),
             Margin = new Padding(8, 4, 8, 4),
@@ -679,7 +655,7 @@ public sealed partial class MainForm : Form
         var button = new ModernButton
         {
             Dock = DockStyle.Fill,
-            Text = text,
+            Text = T(text),
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font("Segoe UI Semibold", 9.5f, FontStyle.Bold),
             Margin = text.StartsWith("PK2", StringComparison.OrdinalIgnoreCase) ? new Padding(10, 0, 0, 0) : new Padding(0, 0, 10, 0),
@@ -870,11 +846,12 @@ public sealed partial class MainForm : Form
         var label = new Label
         {
             Dock = DockStyle.Fill,
-            Text = text,
+            Text = T(text),
             ForeColor = TextDark,
             Font = new Font("Segoe UI Semibold", 9f, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft
         };
+        RegisterLocalizedText(label, text);
         pill.Controls.Add(label);
         return pill;
     }
@@ -953,22 +930,21 @@ public sealed partial class MainForm : Form
         }
     }
 
-    private static void ConfigureExplorerColumns(ListView list)
+    private void ConfigureExplorerColumns(ListView list)
     {
-        if(list.Columns.Count == 4
-            && string.Equals(list.Columns[0].Text, "Name", StringComparison.Ordinal)
-            && string.Equals(list.Columns[1].Text, "Size", StringComparison.Ordinal)
-            && string.Equals(list.Columns[2].Text, "Type", StringComparison.Ordinal)
-            && string.Equals(list.Columns[3].Text, "State", StringComparison.Ordinal))
+        if(list.Columns.Count != 4)
         {
-            return;
+            list.Columns.Clear();
+            list.Columns.Add(string.Empty, 720);
+            list.Columns.Add(string.Empty, 120, HorizontalAlignment.Right);
+            list.Columns.Add(string.Empty, 160);
+            list.Columns.Add(string.Empty, 170);
         }
 
-        list.Columns.Clear();
-        list.Columns.Add("Name", 720);
-        list.Columns.Add("Size", 120, HorizontalAlignment.Right);
-        list.Columns.Add("Type", 160);
-        list.Columns.Add("State", 170);
+        list.Columns[0].Text = T("Name");
+        list.Columns[1].Text = T("Size");
+        list.Columns[2].Text = T("Type");
+        list.Columns[3].Text = T("State");
     }
 
     private static void EnsureListRowHeight(ListView list, int height)
@@ -1073,17 +1049,18 @@ public sealed partial class MainForm : Form
 
         var operationLabel = new Label
         {
-            Text = "Operation",
+            Text = T("Operation"),
             Dock = DockStyle.Fill,
             ForeColor = TextDark,
             TextAlign = ContentAlignment.MiddleLeft,
             AutoEllipsis = true
         };
+        RegisterLocalizedText(operationLabel, "Operation");
         grid.Controls.Add(operationLabel, 0, 0);
 
         ConfigureComboBox(_operationBox);
         _operationBox.Items.Clear();
-        _operationBox.Items.AddRange(new object[] { "Encrypt", "Decrypt" });
+        _operationBox.Items.AddRange(new object[] { T("Encrypt"), T("Decrypt") });
         _operationBox.SelectedIndex = 0;
         _operationBox.Margin = new Padding(0, 10, 12, 10);
         _operationBox.SelectedIndexChanged += (_, _) => RefreshActionState();
@@ -1129,12 +1106,13 @@ public sealed partial class MainForm : Form
         var statusTitle = new Label
         {
             Dock = DockStyle.Fill,
-            Text = "LIVE STATUS",
+            Text = T("LIVE STATUS"),
             ForeColor = TextDark,
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold),
             AutoEllipsis = true
         };
+        RegisterLocalizedText(statusTitle, "LIVE STATUS");
         grid.Controls.Add(statusTitle, 0, 0);
 
         _progressBar.Dock = DockStyle.Fill;
@@ -1175,28 +1153,29 @@ public sealed partial class MainForm : Form
 
         _detailLabel.Dock = DockStyle.Fill;
         _detailLabel.ForeColor = TextMuted;
-        _detailLabel.Text = T("Each page has its own controls. Select Extractor, Import, or Builder from the sidebar.");
+        _detailLabel.Text = T("Each page has its own controls. Select Encryptor, Extractor, Import, or Builder from the sidebar.");
         _detailLabel.TextAlign = ContentAlignment.MiddleLeft;
         _detailLabel.Font = new Font("Consolas", 9f);
         _detailLabel.AutoEllipsis = true;
         _detailLabel.AutoSize = false;
         grid.Controls.Add(_detailLabel, 2, 2);
         grid.SetColumnSpan(_detailLabel, 2);
-
         return card;
     }
 
     private Label CreateStatusCaption(string text)
     {
-        return new Label
+        var label = new Label
         {
-            Text = text,
+            Text = T(text),
             Dock = DockStyle.Fill,
             ForeColor = TextMuted,
             TextAlign = ContentAlignment.MiddleLeft,
             AutoEllipsis = true,
             Font = new Font("Segoe UI Semibold", 9f, FontStyle.Bold)
         };
+        RegisterLocalizedText(label, text);
+        return label;
     }
 
     private void BuildExtractorPage()
@@ -1275,7 +1254,7 @@ public sealed partial class MainForm : Form
         AddLabel(grid, "Output file state", 0, 4, 2);
         ConfigureComboBox(_extractPayloadModeBox);
         _extractPayloadModeBox.Items.Clear();
-        _extractPayloadModeBox.Items.AddRange(new object[] { "Extract restored/plain files", "Extract raw stored payload files" });
+        _extractPayloadModeBox.Items.AddRange(new object[] { T("Extract restored/plain files"), T("Extract raw stored payload files") });
         _extractPayloadModeBox.SelectedIndex = 0;
         _extractPayloadModeBox.Margin = new Padding(0, 8, 12, 6);
         _extractPayloadModeBox.SelectedIndexChanged += (_, _) => RefreshActionState();
@@ -1411,14 +1390,13 @@ public sealed partial class MainForm : Form
         AddLabel(grid, "Stored payload state", 0, 4, 2);
         ConfigureComboBox(_importPayloadModeBox);
         _importPayloadModeBox.Items.Clear();
-        _importPayloadModeBox.Items.AddRange(new object[] { "Store internal payloads plain" });
-        _importPayloadModeBox.SelectedIndex = 0;
-        _importPayloadModeBox.Enabled = false;
+        _importPayloadModeBox.Items.AddRange(new object[] { T("Store internal payloads plain"), T("Store internal payloads encrypted") });
+        _importPayloadModeBox.SelectedIndex = 1;
         _importPayloadModeBox.Margin = new Padding(0, 8, 12, 6);
         _importPayloadModeBox.SelectedIndexChanged += (_, _) => RefreshActionState();
         grid.Controls.Add(_importPayloadModeBox, 0, 5);
 
-        var help = CreateHintLabel("Silkroad-Orginal plain payload mode only.");
+        var help = CreateHintLabel("Encrypted mode is readable only through the matching GFXFileManager.dll.");
         grid.Controls.Add(help, 1, 5);
         return card;
     }
@@ -1462,11 +1440,12 @@ public sealed partial class MainForm : Form
         var label = new Label
         {
             Dock = DockStyle.Fill,
-            Text = "Import notes\r\n\r\nThe selected archive is updated in-place. The selected folder contents are injected directly into the PK2 root; the selected folder name itself is not created inside the archive. Choose a parent folder only when you want its child folders to be created. Plain/encrypted payload mode is applied consistently so GFXFileManager.dll can read it correctly.",
+            Text = T("Import notes\r\n\r\nThe selected archive is updated in-place. Choose a folder such as Data, Media, Map, Music, Particles, or a folder containing those folders. Plain/encrypted payload mode is applied consistently to the whole PK2 so GFXFileManager.dll can read it correctly."),
             ForeColor = TextMuted,
             Font = new Font("Segoe UI", 10f),
             TextAlign = ContentAlignment.TopLeft
         };
+        RegisterLocalizedText(label, "Import notes\r\n\r\nThe selected archive is updated in-place. Choose a folder such as Data, Media, Map, Music, Particles, or a folder containing those folders. Plain/encrypted payload mode is applied consistently to the whole PK2 so GFXFileManager.dll can read it correctly.");
         card.Controls.Add(label);
         return card;
     }
@@ -1570,11 +1549,7 @@ public sealed partial class MainForm : Form
         _builderQueueList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
         _builderQueueList.BorderStyle = BorderStyle.None;
         _builderQueueList.OwnerDraw = true;
-        _builderQueueList.Columns.Clear();
-        _builderQueueList.Columns.Add("PK2 archive", 160);
-        _builderQueueList.Columns.Add("Source folder", 480);
-        _builderQueueList.Columns.Add("Output file", 480);
-        _builderQueueList.Columns.Add("Status", 140);
+        ConfigureBuilderColumns();
         _builderQueueList.DrawColumnHeader += DrawListHeader;
         _builderQueueList.DrawSubItem += DrawBuilderSubItem;
         _builderQueueList.DrawItem += (_, e) => { if(_builderQueueList.View != View.Details) e.DrawDefault = true; };
@@ -1596,7 +1571,7 @@ public sealed partial class MainForm : Form
     {
         if(e.ColumnIndex != 0)
         {
-            var boldStatus = e.ColumnIndex == 3 && string.Equals(e.SubItem.Text, "Ready", StringComparison.OrdinalIgnoreCase);
+            var boldStatus = e.ColumnIndex == 3 && string.Equals(e.SubItem.Text, T("Ready"), StringComparison.OrdinalIgnoreCase);
             DrawListCell(e, e.SubItem.Text, e.Bounds, leftPadding: 10, bold: boldStatus);
             return;
         }
@@ -1642,10 +1617,13 @@ public sealed partial class MainForm : Form
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140));
         card.Controls.Add(grid);
 
-        _builderEncryptEntriesBox.Checked = false;
-        _builderEncryptPayloadsBox.Checked = false;
-        grid.Controls.Add(CreateHintLabel("Build mode: plain Silkroad-Orginal PK2 using GFXFileManager.dll."), 0, 0);
-        grid.SetColumnSpan(grid.Controls[grid.Controls.Count - 1], 3);
+        ConfigureCheckBox(_builderEncryptEntriesBox, "Encrypt directory entries", true);
+        _builderEncryptEntriesBox.CheckedChanged += (_, _) => RefreshActionState();
+        grid.Controls.Add(_builderEncryptEntriesBox, 0, 0);
+        ConfigureCheckBox(_builderEncryptPayloadsBox, "Encrypt internal payloads", true);
+        _builderEncryptPayloadsBox.CheckedChanged += (_, _) => RefreshActionState();
+        grid.Controls.Add(_builderEncryptPayloadsBox, 1, 0);
+        grid.Controls.Add(CreateHintLabel("Encrypted payloads are decrypted by GFXFileManager.dll at runtime."), 2, 0);
         ConfigureButton(_builderRefreshButton, "Refresh", ButtonRole.Secondary);
         _builderRefreshButton.Click += (_, _) => PopulateBuilderQueue();
         grid.Controls.Add(_builderRefreshButton, 3, 0);
@@ -1688,6 +1666,23 @@ public sealed partial class MainForm : Form
         _builderQueueList.Columns[1].Width = sourceWidth;
         _builderQueueList.Columns[2].Width = outputWidth;
         _builderQueueList.Columns[3].Width = Math.Max(110, available - nameWidth - sourceWidth - outputWidth);
+    }
+
+    private void ConfigureBuilderColumns()
+    {
+        if(_builderQueueList.Columns.Count != 4)
+        {
+            _builderQueueList.Columns.Clear();
+            _builderQueueList.Columns.Add(string.Empty, 160);
+            _builderQueueList.Columns.Add(string.Empty, 480);
+            _builderQueueList.Columns.Add(string.Empty, 480);
+            _builderQueueList.Columns.Add(string.Empty, 140);
+        }
+
+        _builderQueueList.Columns[0].Text = T("PK2 archive");
+        _builderQueueList.Columns[1].Text = T("Source folder");
+        _builderQueueList.Columns[2].Text = T("Output file");
+        _builderQueueList.Columns[3].Text = T("Status");
     }
 
     private ModernPanel CreateCard(bool strong = false, bool accentLine = false, int radius = 16)
@@ -1993,6 +1988,7 @@ public sealed partial class MainForm : Form
             _workspaceHost.Invalidate(true);
             UpdateNavigationState();
             UpdateModeButtonState();
+            ApplyImmersiveTitleBar();
             Invalidate(true);
             Refresh();
         }

@@ -119,16 +119,11 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        var encryptedFiles = false;
+        var encryptedFiles = _importPayloadModeBox.SelectedIndex == 1;
         var mode = encryptedFiles ? T("encrypted/GFXFileManager-readable") : T("plain");
-
-        // Import must inject the selected folder CONTENTS directly into the PK2 root.
-        // Example: selecting a local folder named "Media" for Media.pk2 should import
-        // its files and subfolders into the archive root, not create an extra "Media"
-        // folder inside the PK2. If the user wants a top-level folder to be created,
-        // they can select the parent folder that contains that folder.
-        var internalFolder = string.Empty;
-        var confirm = TF("This will inject the selected folder contents directly into the client PK2 root. The source folder name itself will not be created inside the PK2. Subfolder structure and all PK2 payloads will be stored as {0} data. Continue?", mode);
+        var internalFolder = InferImportInternalFolder(source);
+        var targetText = string.IsNullOrWhiteSpace(internalFolder) ? T("the client PK2 root") : TF("the client PK2 folder '{0}'", internalFolder);
+        var confirm = TF("This will inject the selected folder into {0}. Folder structure will be preserved and all PK2 payloads will be stored as {1} data. Continue?", targetText, mode);
         if(MessageBox.Show(this, confirm, Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
         {
             return;
@@ -204,11 +199,11 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        var encryptEntries = false;
-        var encryptPayloads = false;
-        var payloadMode = T("plain internal file payloads");
-        var headerMode = T("standard readable header + plain directory entries");
-        var confirm = TF("This will build {0:N0} PK2 archive(s) with {1} and {2}. Continue?", jobs.Length, headerMode, payloadMode);
+        var encryptEntries = _builderEncryptEntriesBox.Checked;
+        var encryptPayloads = _builderEncryptPayloadsBox.Checked;
+        var payloadMode = encryptPayloads ? T("encrypted internal file payloads") : T("plain internal file payloads");
+        var headerMode = encryptEntries ? T("standard readable header + encrypted directory entries") : T("standard readable header + plain directory entries");
+        var confirm = TF("This will build {0:N0} PK2 archive(s) with {1} and {2}. Encrypted payloads require the matching GFXFileManager.dll. Continue?", jobs.Length, headerMode, payloadMode);
         if(MessageBox.Show(this, confirm, Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
         {
             return;
@@ -259,7 +254,7 @@ public sealed partial class MainForm : Form
 
                 SetItemStatus(item, T("Processing"));
                 item.EnsureVisible();
-                _statusLabel.Text = $"{operationName}: {index + 1:N0} / {files.Count:N0}";
+                _statusLabel.Text = TF("{0}: {1:N0} / {2:N0}", operationName, index + 1, files.Count);
                 _detailLabel.Text = MakeDisplayPath(rootForPreview, file);
 
                 var fileBytesDone = 0L;
@@ -299,6 +294,10 @@ public sealed partial class MainForm : Form
                             skipped++;
                             SetItemStatus(item, T("Not encrypted"));
                             break;
+                        case CryptoFileResult.SkippedPlainType:
+                            skipped++;
+                            SetItemStatus(item, T("Skipped: Media\\type.txt stays plain"));
+                            break;
                     }
                 }
                 catch(OperationCanceledException)
@@ -316,15 +315,15 @@ public sealed partial class MainForm : Form
 
             _progressBar.Value = _progressBar.Maximum;
             var message = failed == 0
-                ? $"Finished. {processed:N0} file(s) processed, {skipped:N0} skipped."
-                : $"Finished with errors. {processed:N0} processed, {skipped:N0} skipped, {failed:N0} failed.";
+                ? TF("Finished. {0:N0} file(s) processed, {1:N0} skipped.", processed, skipped)
+                : TF("Finished with errors. {0:N0} processed, {1:N0} skipped, {2:N0} failed.", processed, skipped, failed);
             _statusLabel.Text = message;
             _detailLabel.Text = failed == 0 ? T("Operation completed successfully.") : T("Some files failed. Check the Status column.");
             MessageBox.Show(this, message, Text, MessageBoxButtons.OK, failed == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
         catch(OperationCanceledException)
         {
-            _statusLabel.Text = $"Cancelled. {processed:N0} file(s) completed before cancellation.";
+            _statusLabel.Text = TF("Cancelled. {0:N0} file(s) completed before cancellation.", processed);
             _detailLabel.Text = T("The current file is never cancelled in the middle of writing to avoid partial encryption.");
             MessageBox.Show(this, _statusLabel.Text, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
@@ -359,7 +358,7 @@ public sealed partial class MainForm : Form
                 activeJob = job;
                 SetBuilderJobStatus(job, T("Starting"));
                 Directory.CreateDirectory(Path.GetDirectoryName(job.OutputFile) ?? _builderOutputFolderBox.Text.Trim());
-                _statusLabel.Text = $"Building {job.Name}.pk2 ({completed + 1:N0}/{jobs.Count:N0})...";
+                _statusLabel.Text = TF("Building {0}.pk2 ({1:N0}/{2:N0})...", job.Name, completed + 1, jobs.Count);
                 _detailLabel.Text = job.SourceFolder;
                 RefreshNativeProgressUi(force: true);
 
@@ -368,14 +367,14 @@ public sealed partial class MainForm : Form
                 {
                     var scaled = ((jobIndex * _progressBar.Maximum) + update.Percent) / Math.Max(1, jobs.Count);
                     _progressBar.Value = Math.Clamp(scaled, 0, _progressBar.Maximum);
-                    _statusLabel.Text = $"Building {job.Name}.pk2 ({jobIndex + 1:N0}/{jobs.Count:N0})";
-                    _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? job.SourceFolder : update.Status;
+                    _statusLabel.Text = TF("Building {0}.pk2 ({1:N0}/{2:N0})", job.Name, jobIndex + 1, jobs.Count);
+                    _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? job.SourceFolder : TranslateExternalStatus(update.Status);
                     _summaryLabel.Text = $"{(_progressBar.Value / 10.0):N1}%";
-                    SetBuilderJobStatus(job, update.Percent >= 1000 ? "Finalizing" : "Building");
+                    SetBuilderJobStatus(job, update.Percent >= 1000 ? T("Finalizing") : T("Building"));
                     RefreshNativeProgressUi(update.Percent == 0 || update.Percent >= 1000);
                 });
 
-                await NativePk2Tools.BuildPk2Async(job.SourceFolder, job.OutputFile, encryptEntries, encryptPayloads, progress, token);
+                await NativePk2Tools.BuildPk2Async(job.SourceFolder, job.OutputFile, encryptEntries, encryptPayloads, CurrentBlowfishKey, progress, token);
                 completed++;
                 SetBuilderJobStatus(job, T("Done"));
                 UpdateProgress(completed, jobs.Count);
@@ -385,14 +384,16 @@ public sealed partial class MainForm : Form
             _progressBar.Value = _progressBar.Maximum;
             _summaryLabel.Text = "100%";
             _statusLabel.Text = T("Builder PK2 completed.");
-            _detailLabel.Text = "Selected PK2 archives were created with plain internal payloads.";
+            _detailLabel.Text = encryptPayloads
+                ? T("Selected PK2 archives were created with encrypted internal payloads readable through GFXFileManager.dll.")
+                : T("Selected PK2 archives were created with plain internal payloads.");
             MessageBox.Show(this, T("Builder PK2 completed successfully."), Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch(OperationCanceledException)
         {
             if(activeJob is not null)
             {
-                SetBuilderJobStatus(activeJob, "Cancelled");
+                SetBuilderJobStatus(activeJob, T("Cancelled"));
             }
             _statusLabel.Text = T("Builder PK2 cancelled.");
             _detailLabel.Text = T("The active build stopped before the full queue completed.");
@@ -402,7 +403,7 @@ public sealed partial class MainForm : Form
         {
             if(activeJob is not null)
             {
-                SetBuilderJobStatus(activeJob, "Failed");
+                SetBuilderJobStatus(activeJob, T("Failed"));
             }
             _progressBar.Value = 0;
             _summaryLabel.Text = T("Build failed.");
@@ -437,18 +438,20 @@ public sealed partial class MainForm : Form
             {
                 _progressBar.Value = Math.Clamp(update.Percent, 0, _progressBar.Maximum);
                 _statusLabel.Text = T("Importing folder into PK2...");
-                _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? sourcePath : update.Status;
+                _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? sourcePath : TranslateExternalStatus(update.Status);
                 _summaryLabel.Text = $"{(_progressBar.Value / 10.0):N1}%";
                 RefreshNativeProgressUi(update.Percent == 0 || update.Percent >= 1000);
             });
 
-            await NativePk2Tools.ImportFolderAsync(pk2File, sourcePath, internalFolder, encryptedFiles, progress, token);
+            await NativePk2Tools.ImportFolderAsync(pk2File, sourcePath, internalFolder, encryptedFiles, CurrentBlowfishKey, progress, token);
 
             _progressBar.Value = _progressBar.Maximum;
             _summaryLabel.Text = "100%";
-            var message = "Folder import completed.";
+            var message = T("Folder import completed.");
             _statusLabel.Text = message;
-            _detailLabel.Text = "The selected PK2 file was updated in-place with plain internal payloads.";
+            _detailLabel.Text = encryptedFiles
+                ? T("The selected PK2 file was updated in-place with encrypted internal payloads.")
+                : T("The selected PK2 file was updated in-place with plain internal payloads.");
             MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             InvalidatePk2Scan();
             InvalidateExtractPk2Scan();
@@ -493,7 +496,7 @@ public sealed partial class MainForm : Form
         _progressBar.Style = ProgressBarStyle.Continuous;
         _progressBar.Value = 0;
         _progressBar.MarqueeAnimationSpeed = 0;
-        _statusLabel.Text = selectedPaths is null ? "Extracting all PK2 files..." : "Extracting selected PK2 files...";
+        _statusLabel.Text = selectedPaths is null ? T("Extracting all PK2 files...") : T("Extracting selected PK2 files...");
         _detailLabel.Text = outputFolder;
         _summaryLabel.Text = "0%";
 
@@ -508,21 +511,21 @@ public sealed partial class MainForm : Form
             var progress = new Progress<NativePk2Progress>(update =>
             {
                 _progressBar.Value = Math.Clamp(update.Percent, 0, _progressBar.Maximum);
-                _statusLabel.Text = selectedPaths is null ? "Extracting all PK2 files..." : "Extracting selected PK2 files...";
-                _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? outputFolder : update.Status;
+                _statusLabel.Text = selectedPaths is null ? T("Extracting all PK2 files...") : T("Extracting selected PK2 files...");
+                _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? outputFolder : TranslateExternalStatus(update.Status);
                 _summaryLabel.Text = $"{(_progressBar.Value / 10.0):N1}%";
                 RefreshNativeProgressUi(update.Percent == 0 || update.Percent >= 1000);
             });
 
-            await NativePk2Tools.ExtractPk2Async(pk2File, outputFolder, selectionFile, selectedPaths is null, encryptedFiles, progress, token);
+            await NativePk2Tools.ExtractPk2Async(pk2File, outputFolder, selectionFile, selectedPaths is null, encryptedFiles, CurrentBlowfishKey, progress, token);
 
             _progressBar.Value = _progressBar.Maximum;
             _summaryLabel.Text = "100%";
-            var message = "PK2 extraction completed.";
+            var message = T("PK2 extraction completed.");
             _statusLabel.Text = message;
             _detailLabel.Text = encryptedFiles
-                ? "Raw encrypted payloads were preserved under the output folder."
-                : "Files were restored/decrypted under the output folder.";
+                ? T("Raw encrypted payloads were preserved under the output folder.")
+                : T("Files were restored/decrypted under the output folder.");
             MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch(OperationCanceledException)
@@ -560,7 +563,7 @@ public sealed partial class MainForm : Form
         _progressBar.Style = ProgressBarStyle.Continuous;
         _progressBar.Value = 0;
         _progressBar.MarqueeAnimationSpeed = 0;
-        _statusLabel.Text = encrypt ? "Encrypting PK2 internal file payloads..." : "Decrypting PK2 internal file payloads...";
+        _statusLabel.Text = encrypt ? T("Encrypting PK2 internal file payloads...") : T("Decrypting PK2 internal file payloads...");
         _detailLabel.Text = pk2File;
         _summaryLabel.Text = "0%";
 
@@ -569,23 +572,23 @@ public sealed partial class MainForm : Form
             var progress = new Progress<NativePk2Progress>(update =>
             {
                 _progressBar.Value = Math.Clamp(update.Percent, 0, _progressBar.Maximum);
-                _statusLabel.Text = encrypt ? "Encrypting PK2 internal file payloads..." : "Decrypting PK2 internal file payloads...";
-                _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? pk2File : update.Status;
+                _statusLabel.Text = encrypt ? T("Encrypting PK2 internal file payloads...") : T("Decrypting PK2 internal file payloads...");
+                _detailLabel.Text = string.IsNullOrWhiteSpace(update.Status) ? pk2File : TranslateExternalStatus(update.Status);
                 _summaryLabel.Text = $"{(_progressBar.Value / 10.0):N1}%";
                 RefreshNativeProgressUi(update.Percent == 0 || update.Percent >= 1000);
             });
 
-            await NativePk2Tools.CryptPk2Async(pk2File, encrypt, progress, token);
+            await NativePk2Tools.CryptPk2Async(pk2File, encrypt, CurrentBlowfishKey, progress, token);
 
             _progressBar.Value = _progressBar.Maximum;
             _summaryLabel.Text = "100%";
             var message = encrypt
-                ? "PK2 internal payload encryption completed."
-                : "PK2 internal payload decryption completed.";
+                ? T("PK2 internal payload encryption completed.")
+                : T("PK2 internal payload decryption completed.");
             _statusLabel.Text = message;
             _detailLabel.Text = encrypt
-                ? "GFXFileManager.dll can decrypt these payloads while the client reads the PK2."
-                : "The same PK2 file was restored to plain internal payloads.";
+                ? T("GFXFileManager.dll can decrypt these payloads while the client reads the PK2.")
+                : T("The same PK2 file was restored to plain internal payloads.");
             MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             InvalidatePk2Scan();
             InvalidateExtractPk2Scan();

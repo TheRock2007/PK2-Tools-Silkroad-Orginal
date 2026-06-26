@@ -52,7 +52,7 @@ public sealed partial class MainForm : Form
         }
 
         _statusLabel.Text = T("Ready.");
-        _detailLabel.Text = "Folder preview uses Explorer mode: open folders instantly, then press Start to process the selected root.";
+        _detailLabel.Text = T("Folder preview uses Explorer mode: open folders instantly, then press Start to process the selected root.");
         _summaryLabel.Text = T("Opening folder view...");
 
         try
@@ -62,7 +62,7 @@ public sealed partial class MainForm : Form
             _previewCurrentFolder = currentFolder;
             PopulateFolderExplorerList(_previewList, snapshot, rootFolder, currentFolder);
             var relative = GetRelativeFolderCaption(rootFolder, currentFolder);
-            _summaryLabel.Text = $"Folder view: {relative} - {snapshot.Directories.Count:N0} folder(s), {snapshot.Files.Count:N0} file(s).";
+            _summaryLabel.Text = TF("Folder view: {0} - {1:N0} folder(s), {2:N0} file(s).", relative, snapshot.Directories.Count, snapshot.Files.Count);
         }
         catch(Exception ex)
         {
@@ -102,7 +102,7 @@ public sealed partial class MainForm : Form
             _scannedFiles = files;
             _statusLabel.Text = T("Ready.");
             _detailLabel.Text = T("Operation list prepared. Preview remains in Explorer mode so navigation stays instant.");
-            _summaryLabel.Text = $"Prepared {files.Length:N0} file(s), {FormatBytes(files.Sum(GetSafeLength))}.";
+            _summaryLabel.Text = TF("Prepared {0:N0} file(s), {1}.", files.Length, FormatBytes(files.Sum(GetSafeLength)));
         }
         catch(Exception ex)
         {
@@ -160,7 +160,7 @@ public sealed partial class MainForm : Form
             _scannedPk2 = pk2File;
             _scannedPk2Entries = cachedEntries;
             PopulatePk2ExplorerList(_previewList, cachedEntries, string.Empty);
-            _summaryLabel.Text = $"PK2 cache loaded instantly: {Path.GetFileName(pk2File)} - {cachedEntries.Count:N0} internal file(s).";
+            _summaryLabel.Text = TF("PK2 cache loaded instantly: {0} - {1:N0} internal file(s).", Path.GetFileName(pk2File), cachedEntries.Count);
             _statusLabel.Text = T("Ready.");
             _detailLabel.Text = T("Cached PK2 listing is being used. Use Browse again or refresh after rebuilding the archive.");
             return;
@@ -182,11 +182,11 @@ public sealed partial class MainForm : Form
             PopulatePk2ExplorerList(_previewList, entries, string.Empty);
 
             var totalBytes = entries.Sum(entry => entry.Size);
-            _summaryLabel.Text = $"PK2 selected: {Path.GetFileName(pk2File)} - {entries.Count:N0} internal file(s), {FormatBytes(totalBytes)}.";
+            _summaryLabel.Text = TF("PK2 selected: {0} - {1:N0} internal file(s), {2}.", Path.GetFileName(pk2File), entries.Count, FormatBytes(totalBytes));
             _statusLabel.Text = T("Ready.");
             _detailLabel.Text = entries.Count == 0
-                ? "No internal files were listed from this PK2."
-                : "Double-click folders to browse internal PK2 contents like Windows Explorer.";
+                ? T("No internal files were listed from this PK2.")
+                : T("Double-click folders to browse internal PK2 contents like Windows Explorer.");
         }
         catch(Exception ex)
         {
@@ -245,7 +245,7 @@ public sealed partial class MainForm : Form
             _scannedExtractPk2 = pk2File;
             _scannedExtractPk2Entries = cachedEntries;
             PopulatePk2ExplorerList(_extractPreviewList, cachedEntries, string.Empty);
-            _summaryLabel.Text = $"Extractor cache loaded instantly: {Path.GetFileName(pk2File)} - {cachedEntries.Count:N0} internal file(s).";
+            _summaryLabel.Text = TF("Extractor cache loaded instantly: {0} - {1:N0} internal file(s).", Path.GetFileName(pk2File), cachedEntries.Count);
             _statusLabel.Text = T("Ready.");
             _detailLabel.Text = T("Double-click folders to browse; select files to extract or use Extract All.");
             return;
@@ -267,11 +267,11 @@ public sealed partial class MainForm : Form
             PopulatePk2ExplorerList(_extractPreviewList, entries, string.Empty);
 
             var totalBytes = entries.Sum(entry => entry.Size);
-            _summaryLabel.Text = $"Extractor ready: {Path.GetFileName(pk2File)} - {entries.Count:N0} internal file(s), {FormatBytes(totalBytes)}.";
+            _summaryLabel.Text = TF("Extractor ready: {0} - {1:N0} internal file(s), {2}.", Path.GetFileName(pk2File), entries.Count, FormatBytes(totalBytes));
             _statusLabel.Text = T("Ready.");
             _detailLabel.Text = entries.Count == 0
-                ? "No internal files were listed. Make sure the selected archive is a real Silkroad PK2 and GFXFileManager.dll is rebuilt from this source."
-                : "Double-click folders to browse; select files to extract or use Extract All.";
+                ? T("No internal files were listed. Make sure the selected archive is a real Silkroad PK2 and GFXFileManager.dll is rebuilt from this source.")
+                : T("Double-click folders to browse; select files to extract or use Extract All.");
         }
         catch(Exception ex)
         {
@@ -291,9 +291,9 @@ public sealed partial class MainForm : Form
     }
 
 
-    private static async Task<List<Pk2PreviewEntry>> ReadPk2EntriesViaBuilderAsync(string pk2File)
+    private async Task<List<Pk2PreviewEntry>> ReadPk2EntriesViaBuilderAsync(string pk2File)
     {
-        return await NativePk2Tools.ReadPk2EntriesAsync(pk2File, default);
+        return await NativePk2Tools.ReadPk2EntriesAsync(pk2File, CurrentBlowfishKey, default);
     }
 
 
@@ -314,7 +314,7 @@ public sealed partial class MainForm : Form
             list.Items.Clear();
             if(!string.IsNullOrWhiteSpace(currentFolder))
             {
-                var up = new ListViewItem("..  Parent folder");
+                var up = new ListViewItem("..  " + T("Parent folder"));
                 up.SubItems.Add(string.Empty);
                 up.SubItems.Add(T("Folder"));
                 up.SubItems.Add(T("Up"));
@@ -402,7 +402,7 @@ public sealed partial class MainForm : Form
                 {
                     parent = rootFolder;
                 }
-                var up = new ListViewItem("..  Parent folder");
+                var up = new ListViewItem("..  " + T("Parent folder"));
                 up.SubItems.Add(string.Empty);
                 up.SubItems.Add(T("Folder"));
                 up.SubItems.Add(T("Up"));
@@ -515,13 +515,13 @@ public sealed partial class MainForm : Form
         {
             _extractCurrentPk2Folder = folder;
             PopulatePk2ExplorerList(list, _scannedExtractPk2Entries, folder);
-            _summaryLabel.Text = string.IsNullOrWhiteSpace(folder) ? "PK2 root folder." : "PK2 folder: " + folder;
+            _summaryLabel.Text = string.IsNullOrWhiteSpace(folder) ? T("PK2 root folder.") : TF("PK2 folder: {0}", folder);
         }
         else
         {
             _previewCurrentPk2Folder = folder;
             PopulatePk2ExplorerList(list, _scannedPk2Entries, folder);
-            _summaryLabel.Text = string.IsNullOrWhiteSpace(folder) ? "PK2 root folder." : "PK2 folder: " + folder;
+            _summaryLabel.Text = string.IsNullOrWhiteSpace(folder) ? T("PK2 root folder.") : TF("PK2 folder: {0}", folder);
         }
         return Task.CompletedTask;
     }
@@ -559,7 +559,7 @@ public sealed partial class MainForm : Form
                 var item = new ListViewItem("  " + name);
                 item.SubItems.Add(FormatBytes(GetSafeLength(file)));
                 item.SubItems.Add(GetFileTypeCaption(name));
-                item.SubItems.Add("Processing");
+                item.SubItems.Add(T("Processing"));
                 item.Tag = file;
                 _previewList.Items.Add(item);
             }
@@ -589,13 +589,13 @@ public sealed partial class MainForm : Form
     }
 
 
-    private static string GetRelativeFolderCaption(string root, string current)
+    private string GetRelativeFolderCaption(string root, string current)
     {
         try
         {
             if(PathsEqual(root, current))
             {
-                return "Root";
+                return T("Root");
             }
             return Path.GetRelativePath(root, current);
         }

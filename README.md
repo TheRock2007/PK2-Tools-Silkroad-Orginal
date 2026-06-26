@@ -2,7 +2,7 @@
 
 # ⚜️ PK2 Tools — Silkroad-Orginal
 
-### Secure • Extract • Inject • Build
+### Build • Extract • Inject • Secure
 
 A clean and modern Windows desktop toolkit for managing **Silkroad PK2 archives** with one focused runtime profile:  
 **Silkroad-Orginal**
@@ -67,7 +67,7 @@ The old separated profile below was removed from the source:
 <table>
   <tr>
     <td width="25%"><b>🔐 Encryptor</b></td>
-    <td>Encrypt folders or internal PK2 payloads using the selected PK2 Blowfish Key.</td>
+    <td>Encrypt folders or internal PK2 payloads. Internal PK2 encryption keeps Media\type.txt plain/readable by design.</td>
   </tr>
   <tr>
     <td><b>📦 Extractor</b></td>
@@ -75,41 +75,25 @@ The old separated profile below was removed from the source:
   </tr>
   <tr>
     <td><b>🧩 Import / Inject</b></td>
-    <td>Inject updated folders or files into an existing PK2 archive while keeping payload mode consistent.</td>
+    <td>Inject updated folders into an existing PK2 archive while keeping payload mode consistent and preserving Media\type.txt as plain data.</td>
   </tr>
   <tr>
     <td><b>🏗️ Build PK2</b></td>
-    <td>Build common Silkroad PK2 archives from known client folders such as Data, Map, Media, Music, and Particles.</td>
+    <td>Build common Silkroad PK2 archives from known client folders and optionally encrypt directory entries/internal payloads from the Builder page.</td>
   </tr>
 </table>
 
 ---
 
-## 🔑 PK2 Blowfish Key
+## 🔐 Payload encryption rule
 
-The default PK2 Blowfish Key is:
-
-```text
-169841
-```
-
-The key is visible in the GUI by default.
-
-Users can change the key directly from the interface before:
-
-- Reading PK2 files
-- Extracting PK2 content
-- Importing / injecting files
-- Encrypting PK2 or folders
-- Building new PK2 archives
-
-When the value is changed in the GUI, the selected operation uses the new key automatically.
-
-If the key field is empty, the application falls back to:
+When internal PK2 payload encryption is enabled, the tool encrypts every file payload except:
 
 ```text
-169841
+Media\type.txt
 ```
+
+When building or editing `Media.pk2`, this same file can appear internally as `type.txt`; it is still kept plain. That file is always stored/read as plain data so the client can access it normally, while the rest of the PK2 payloads stay protected for GFXFileManager runtime reading.
 
 ---
 

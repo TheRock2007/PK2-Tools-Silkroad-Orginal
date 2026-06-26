@@ -148,6 +148,7 @@ namespace
 		const bool sourceAlreadyEncrypted =
 			PK2PayloadCrypto_TryGetLooseEncryptedPayloadSize(node.sourcePath.string(), looseEncryptedPayloadSize) &&
 			looseEncryptedPayloadSize == node.fileSize;
+		const bool encryptThisPayload = encryptPayload && PK2PayloadCrypto_ShouldDecrypt(internalPath);
 
 		std::vector<uint8_t> buffer(1024 * 1024);
 		size_t readCount = 0;
@@ -168,12 +169,12 @@ namespace
 				// to the final PK2 payload offset, or decrypt them if the target
 				// archive should store plain payloads.
 				PK2PayloadCrypto_CryptBuffer(0, node.fileSize, streamOffset, buffer.data(), readCount);
-				if(encryptPayload)
+				if(encryptThisPayload)
 				{
 					PK2PayloadCrypto_CryptBuffer(node.fileOffset, node.fileSize, streamOffset, buffer.data(), readCount);
 				}
 			}
-			else if(encryptPayload)
+			else if(encryptThisPayload)
 			{
 				PK2PayloadCrypto_CryptBuffer(node.fileOffset, node.fileSize, streamOffset, buffer.data(), readCount);
 			}
@@ -1033,7 +1034,7 @@ namespace
 		return true;
 	}
 
-	bool DirectAppendFilePayload(DirectPk2Context & ctx, const fs::path & sourceFile, uint64_t & fileOffset, uint32_t & fileSize, std::string & error)
+	bool DirectAppendFilePayload(DirectPk2Context & ctx, const fs::path & sourceFile, const std::string & internalPath, uint64_t & fileOffset, uint32_t & fileSize, std::string & error)
 	{
 		std::error_code ec;
 		uintmax_t size = fs::file_size(sourceFile, ec);
@@ -1073,6 +1074,7 @@ namespace
 			return false;
 		}
 		fileOffset = static_cast<uint64_t>(file_tell(ctx.file));
+		const bool encryptThisPayload = ctx.payloadEncrypted && PK2PayloadCrypto_ShouldDecrypt(internalPath);
 
 		std::vector<uint8_t> buffer(1024 * 1024);
 		uint64_t streamOffset = 0;
@@ -1090,12 +1092,12 @@ namespace
 				// them to plain first, then optionally encrypt them again for the
 				// destination PK2 payload offset.
 				PK2PayloadCrypto_CryptBuffer(0, fileSize, streamOffset, buffer.data(), readCount);
-				if(ctx.payloadEncrypted)
+				if(encryptThisPayload)
 				{
 					PK2PayloadCrypto_CryptBuffer(fileOffset, fileSize, streamOffset, buffer.data(), readCount);
 				}
 			}
-			else if(ctx.payloadEncrypted)
+			else if(encryptThisPayload)
 			{
 				PK2PayloadCrypto_CryptBuffer(fileOffset, fileSize, streamOffset, buffer.data(), readCount);
 			}
@@ -1184,7 +1186,13 @@ namespace
 
 		uint64_t fileOffset = 0;
 		uint32_t fileSize = 0;
-		if(!DirectAppendFilePayload(ctx, sourceFile, fileOffset, fileSize, error))
+		std::string internalPath = NormalizeInternalFolder(internalFolder);
+		if(!internalPath.empty())
+		{
+			internalPath += "\\";
+		}
+		internalPath += fileName;
+		if(!DirectAppendFilePayload(ctx, sourceFile, internalPath, fileOffset, fileSize, error))
 		{
 			return false;
 		}
@@ -1413,7 +1421,8 @@ namespace
 					ctx->error = reader->GetError();
 					return false;
 				}
-				if(reader->HasPayloadEncryption() && !buffer.empty())
+				std::string internalPath = path.empty() ? std::string(entry.name) : (path + "\\" + entry.name);
+				if(reader->HasPayloadEncryption() && !buffer.empty() && PK2PayloadCrypto_ShouldDecrypt(internalPath))
 				{
 					PK2PayloadCrypto_DecryptBufferForFile(static_cast<uint64_t>(entry.position), entry.size, buffer.data(), buffer.size());
 				}
@@ -1438,22 +1447,19 @@ namespace
 }
 
 PK2Writer::PK2Writer()
-	: m_encrypt(true), m_encryptPayloads(true), m_progressCallback(nullptr), m_progressUserdata(nullptr), m_asciiKey("169841"), m_asciiKeyLength(6)
+	: m_encrypt(true), m_encryptPayloads(true), m_progressCallback(nullptr), m_progressUserdata(nullptr)
 {
 	SetEncryptionKey();
 }
 
 void PK2Writer::SetEncryptionKey(char * ascii_key, uint8_t ascii_key_length, char * base_key, uint8_t base_key_length)
 {
-	if(ascii_key == nullptr || ascii_key_length == 0)
-	{
-		ascii_key = (char*)"169841";
-		ascii_key_length = 6;
-	}
 	if(ascii_key_length > 56)
 	{
 		ascii_key_length = 56;
 	}
+	m_asciiKey.assign(ascii_key, ascii_key + ascii_key_length);
+	m_baseKey.assign(base_key, base_key + base_key_length);
 	uint8_t bf_key[56] = { 0 };
 	uint8_t a_key[56] = { 0 };
 	uint8_t b_key[56] = { 0 };
@@ -1464,17 +1470,6 @@ void PK2Writer::SetEncryptionKey(char * ascii_key, uint8_t ascii_key_length, cha
 		bf_key[x] = a_key[x] ^ b_key[x];
 	}
 	m_blowfish.Initialize(bf_key, ascii_key_length);
-	m_asciiKey.assign(ascii_key, ascii_key + ascii_key_length);
-	m_asciiKeyLength = ascii_key_length;
-}
-
-void PK2Writer::ApplyReaderKey(PK2Reader & reader) const
-{
-	if(m_asciiKey.empty())
-	{
-		return;
-	}
-	reader.SetDecryptionKey((char*)m_asciiKey.data(), m_asciiKeyLength);
 }
 
 void PK2Writer::SetEncryptEntries(bool enabled)
@@ -1610,7 +1605,10 @@ bool PK2Writer::ExtractAll(const fs::path & inputPk2, const fs::path & outputFol
 {
 	m_error.clear();
 	PK2Reader reader;
-	ApplyReaderKey(reader);
+	if(!m_asciiKey.empty())
+	{
+		reader.SetDecryptionKey((char*)m_asciiKey.data(), static_cast<uint8_t>(std::min<size_t>(m_asciiKey.size(), 56)));
+	}
 	if(!reader.Open(inputPk2.string().c_str()))
 	{
 		m_error = reader.GetError();
@@ -1644,7 +1642,10 @@ bool PK2Writer::ListFiles(const fs::path & inputPk2, std::vector<std::string> & 
 	files.clear();
 
 	PK2Reader reader;
-	ApplyReaderKey(reader);
+	if(!m_asciiKey.empty())
+	{
+		reader.SetDecryptionKey((char*)m_asciiKey.data(), static_cast<uint8_t>(std::min<size_t>(m_asciiKey.size(), 56)));
+	}
 	if(!reader.Open(inputPk2.string().c_str()))
 	{
 		m_error = reader.GetError();
@@ -1676,7 +1677,10 @@ bool PK2Writer::CryptPayloadsInPlace(const fs::path & inputPk2, bool encryptPayl
 	m_error.clear();
 
 	PK2Reader reader;
-	ApplyReaderKey(reader);
+	if(!m_asciiKey.empty())
+	{
+		reader.SetDecryptionKey((char*)m_asciiKey.data(), static_cast<uint8_t>(std::min<size_t>(m_asciiKey.size(), 56)));
+	}
 	bool opened = reader.Open(inputPk2.string().c_str());
 	if(!opened)
 	{
@@ -1745,7 +1749,7 @@ bool PK2Writer::CryptPayloadsInPlace(const fs::path & inputPk2, bool encryptPayl
 		{
 			++currentFile;
 			const PK2Entry & entry = item.entry;
-			if(entry.type != 2 || entry.size == 0)
+			if(entry.type != 2 || entry.size == 0 || !PK2PayloadCrypto_ShouldDecrypt(item.relativePath))
 			{
 				continue;
 			}
@@ -1836,7 +1840,10 @@ bool PK2Writer::ExtractSelected(const fs::path & inputPk2, const fs::path & outp
 	}
 
 	PK2Reader reader;
-	ApplyReaderKey(reader);
+	if(!m_asciiKey.empty())
+	{
+		reader.SetDecryptionKey((char*)m_asciiKey.data(), static_cast<uint8_t>(std::min<size_t>(m_asciiKey.size(), 56)));
+	}
 	if(!reader.Open(inputPk2.string().c_str()))
 	{
 		m_error = reader.GetError();
@@ -1888,7 +1895,7 @@ bool PK2Writer::ExtractSelected(const fs::path & inputPk2, const fs::path & outp
 			reader.Close();
 			return false;
 		}
-		if(reader.HasPayloadEncryption() && !buffer.empty())
+		if(reader.HasPayloadEncryption() && !buffer.empty() && PK2PayloadCrypto_ShouldDecrypt(normalized))
 		{
 			PK2PayloadCrypto_DecryptBufferForFile(static_cast<uint64_t>(entry.position), entry.size, buffer.data(), buffer.size());
 		}

@@ -26,14 +26,13 @@ class PK2Writer
 {
 private:
 	Blowfish m_blowfish;
+	std::string m_asciiKey;
+	std::string m_baseKey;
 	std::string m_error;
 	bool m_encrypt;
 	bool m_encryptPayloads;
 	PK2BuildProgressCallback m_progressCallback;
 	void * m_progressUserdata;
-	std::string m_asciiKey;
-	uint8_t m_asciiKeyLength;
-	void ApplyReaderKey(PK2Reader & reader) const;
 
 public:
 	PK2Writer();

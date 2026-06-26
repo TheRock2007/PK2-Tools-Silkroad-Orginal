@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -23,13 +24,14 @@ internal static class Program
         try
         {
             ApplicationConfiguration.Initialize();
-            Application.Run(new MainForm(ProjectProfiles.SilkroadOriginal));
+            Application.Run(new MainForm());
         }
         catch(Exception ex)
         {
             ShowFatalStartupError(ex);
         }
     }
+
     private static void ShowFatalStartupError(Exception ex)
     {
         try
@@ -38,11 +40,36 @@ internal static class Program
             Directory.CreateDirectory(folder);
             var logFile = Path.Combine(folder, "startup-error.log");
             File.WriteAllText(logFile, ex.ToString());
-            MessageBox.Show($"PK2 Tools could not start.\r\n\r\n{ex.Message}\r\n\r\nA log was written to:\r\n{logFile}", "PK2 Tools", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            var languageCode = ReadSavedLanguageCode();
+            var message = string.Equals(languageCode, "ar", StringComparison.OrdinalIgnoreCase)
+                ? $"تعذر تشغيل PK2 Tools.\r\n\r\n{ex.Message}\r\n\r\nتم حفظ سجل الخطأ في:\r\n{logFile}"
+                : $"PK2 Tools could not start.\r\n\r\n{ex.Message}\r\n\r\nA log was written to:\r\n{logFile}";
+            MessageBox.Show(message, "PK2 Tools", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch
         {
             MessageBox.Show(ex.ToString(), "PK2 Tools", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private static string ReadSavedLanguageCode()
+    {
+        try
+        {
+            var settingsPath = Path.Combine(AppContext.BaseDirectory, "Setting.json");
+            if(!File.Exists(settingsPath))
+            {
+                return "en";
+            }
+
+            using var document = JsonDocument.Parse(File.ReadAllText(settingsPath));
+            return document.RootElement.TryGetProperty("LanguageCode", out var language)
+                ? language.GetString() ?? "en"
+                : "en";
+        }
+        catch
+        {
+            return "en";
         }
     }
 }

@@ -67,6 +67,36 @@ namespace
     {
         return path.string();
     }
+    std::string NarrowWide(const wchar_t * value)
+    {
+        if(!value || !value[0])
+        {
+            return std::string();
+        }
+        int needed = WideCharToMultiByte(CP_UTF8, 0, value, -1, nullptr, 0, nullptr, nullptr);
+        if(needed <= 0)
+        {
+            return std::string();
+        }
+        std::string result(static_cast<size_t>(needed), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, value, -1, result.data(), needed, nullptr, nullptr);
+        if(!result.empty() && result.back() == '\0')
+        {
+            result.pop_back();
+        }
+        return result;
+    }
+
+    std::string NormalizeBlowfishKey(const wchar_t * blowfishKey)
+    {
+        std::string key = NarrowWide(blowfishKey);
+        while(!key.empty() && isspace(static_cast<unsigned char>(key.front()))) key.erase(key.begin());
+        while(!key.empty() && isspace(static_cast<unsigned char>(key.back()))) key.pop_back();
+        if(key.empty()) key = "169841";
+        if(key.size() > 56) key.resize(56);
+        return key;
+    }
+
 
     void CopyError(const std::string & message, wchar_t * errorBuffer, int errorChars)
     {
@@ -138,25 +168,6 @@ namespace
     {
         std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) { return static_cast<char>(tolower(ch)); });
         return value;
-    }
-
-    std::string g_configuredBlowfishKey;
-
-    std::string GetConfiguredBlowfishKey()
-    {
-        return g_configuredBlowfishKey.empty() ? std::string("169841") : g_configuredBlowfishKey;
-    }
-
-    void ApplyConfiguredBlowfishKey(PK2Reader & reader)
-    {
-        std::string key = GetConfiguredBlowfishKey();
-        reader.SetDecryptionKey((char*)key.data(), static_cast<uint8_t>(std::min<size_t>(key.size(), 56)));
-    }
-
-    void ApplyConfiguredBlowfishKey(PK2Writer & writer)
-    {
-        std::string key = GetConfiguredBlowfishKey();
-        writer.SetEncryptionKey((char*)key.data(), static_cast<uint8_t>(std::min<size_t>(key.size(), 56)));
     }
 
     std::string NormalizeRelativePath(std::string value)
@@ -303,14 +314,15 @@ namespace
         return false;
     }
 
-    bool OpenReaderWithFallback(PK2Reader & reader, const fs::path & pk2File, std::string & error)
+    bool OpenReaderWithFallback(PK2Reader & reader, const fs::path & pk2File, const std::string & blowfishKey, std::string & error)
     {
-        ApplyConfiguredBlowfishKey(reader);
+        std::string key = blowfishKey.empty() ? "169841" : blowfishKey;
+        reader.SetDecryptionKey((char*)key.data(), static_cast<uint8_t>(std::min<size_t>(key.size(), 56)));
         bool opened = reader.Open(NarrowPath(pk2File).c_str());
         if(!opened)
         {
             std::string openError = reader.GetError();
-            if(openError == "Invalid Blowfish key." && g_configuredBlowfishKey.empty())
+            if(openError == "Invalid Blowfish key.")
             {
                 reader.SetDecryptionKey((char*)"\x32\x30\x30\x39\xC4\xEA");
                 opened = reader.Open(NarrowPath(pk2File).c_str());
@@ -487,7 +499,7 @@ namespace
 
         if(!rawOutput && !buffer.empty())
         {
-            if(reader.HasPayloadEncryption())
+            if(reader.HasPayloadEncryption() && PK2PayloadCrypto_ShouldDecrypt(item.relativePath))
             {
                 PK2PayloadCrypto_DecryptBufferForFile(static_cast<uint64_t>(entry.position), entry.size, buffer.data(), buffer.size());
             }
@@ -530,43 +542,7 @@ namespace
     }
 }
 
-
-extern "C" __declspec(dllexport) int __stdcall PK2Tools_SetBlowfishKeyW(const wchar_t * key, wchar_t * errorBuffer, int errorChars)
-{
-    try
-    {
-        g_configuredBlowfishKey.clear();
-        if(key && key[0])
-        {
-            int needed = WideCharToMultiByte(CP_UTF8, 0, key, -1, nullptr, 0, nullptr, nullptr);
-            if(needed <= 0)
-            {
-                CopyError("Invalid PK2 Blowfish key.", errorBuffer, errorChars);
-                return 2;
-            }
-            std::string utf8(static_cast<size_t>(needed), '\0');
-            WideCharToMultiByte(CP_UTF8, 0, key, -1, utf8.data(), needed, nullptr, nullptr);
-            if(!utf8.empty() && utf8.back() == '\0')
-            {
-                utf8.pop_back();
-            }
-            if(utf8.size() > 56)
-            {
-                utf8.resize(56);
-            }
-            g_configuredBlowfishKey = utf8;
-        }
-        CopyError("", errorBuffer, errorChars);
-        return 0;
-    }
-    catch(...)
-    {
-        CopyError("Could not set PK2 Blowfish key.", errorBuffer, errorChars);
-        return 1;
-    }
-}
-
-extern "C" __declspec(dllexport) int __stdcall PK2Tools_ListPk2W(const wchar_t * pk2File, const wchar_t * listFile, wchar_t * errorBuffer, int errorChars)
+extern "C" __declspec(dllexport) int __stdcall PK2Tools_ListPk2W(const wchar_t * pk2File, const wchar_t * listFile, const wchar_t * blowfishKey, wchar_t * errorBuffer, int errorChars)
 {
     if(!pk2File || !listFile)
     {
@@ -576,7 +552,7 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_ListPk2W(const wchar_t *
 
     std::string error;
     PK2Reader reader;
-    if(!OpenReaderWithFallback(reader, fs::path(pk2File), error))
+    if(!OpenReaderWithFallback(reader, fs::path(pk2File), NormalizeBlowfishKey(blowfishKey), error))
     {
         CopyError(error, errorBuffer, errorChars);
         return 3;
@@ -609,7 +585,7 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_ListPk2W(const wchar_t *
     return 0;
 }
 
-extern "C" __declspec(dllexport) int __stdcall PK2Tools_BuildPk2W(const wchar_t * sourceFolder, const wchar_t * outputPk2, int encryptEntries, int encryptPayloads, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
+extern "C" __declspec(dllexport) int __stdcall PK2Tools_BuildPk2W(const wchar_t * sourceFolder, const wchar_t * outputPk2, int encryptEntries, int encryptPayloads, const wchar_t * blowfishKey, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
 {
     if(!sourceFolder || !outputPk2)
     {
@@ -632,7 +608,8 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_BuildPk2W(const wchar_t 
     SendProgress(&ctx, 0, L"Preparing PK2 build...");
 
     PK2Writer writer;
-    ApplyConfiguredBlowfishKey(writer);
+    std::string key = NormalizeBlowfishKey(blowfishKey);
+    writer.SetEncryptionKey((char*)key.data(), static_cast<uint8_t>(key.size()));
     writer.SetEncryptEntries(encryptEntries != 0);
     writer.SetEncryptPayloads(encryptPayloads != 0);
     writer.SetProgressCallback(&WriterProgressBridge, &ctx);
@@ -646,7 +623,7 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_BuildPk2W(const wchar_t 
     return 0;
 }
 
-extern "C" __declspec(dllexport) int __stdcall PK2Tools_CryptPk2W(const wchar_t * pk2File, int encryptPayloads, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
+extern "C" __declspec(dllexport) int __stdcall PK2Tools_CryptPk2W(const wchar_t * pk2File, int encryptPayloads, const wchar_t * blowfishKey, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
 {
     if(!pk2File)
     {
@@ -661,7 +638,8 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_CryptPk2W(const wchar_t 
     SendProgress(&ctx, 0, ctx.operation);
 
     PK2Writer writer;
-    ApplyConfiguredBlowfishKey(writer);
+    std::string key = NormalizeBlowfishKey(blowfishKey);
+    writer.SetEncryptionKey((char*)key.data(), static_cast<uint8_t>(key.size()));
     writer.SetProgressCallback(&WriterProgressBridge, &ctx);
     if(!writer.CryptPayloadsInPlace(fs::path(pk2File), encryptPayloads != 0))
     {
@@ -673,7 +651,7 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_CryptPk2W(const wchar_t 
     return 0;
 }
 
-extern "C" __declspec(dllexport) int __stdcall PK2Tools_ImportFolderW(const wchar_t * pk2File, const wchar_t * sourceFolder, const wchar_t * internalFolder, int encryptPayloads, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
+extern "C" __declspec(dllexport) int __stdcall PK2Tools_ImportFolderW(const wchar_t * pk2File, const wchar_t * sourceFolder, const wchar_t * internalFolder, int encryptPayloads, const wchar_t * blowfishKey, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
 {
     if(!pk2File || !sourceFolder)
     {
@@ -690,7 +668,8 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_ImportFolderW(const wcha
     SendProgress(&ctx, 0, ctx.operation);
 
     PK2Writer writer;
-    ApplyConfiguredBlowfishKey(writer);
+    std::string key = NormalizeBlowfishKey(blowfishKey);
+    writer.SetEncryptionKey((char*)key.data(), static_cast<uint8_t>(key.size()));
     writer.SetProgressCallback(&WriterProgressBridge, &ctx);
 
     // Normalize the whole archive first. This keeps old entries and newly
@@ -716,7 +695,7 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_ImportFolderW(const wcha
     return 0;
 }
 
-extern "C" __declspec(dllexport) int __stdcall PK2Tools_ExtractPk2W(const wchar_t * pk2File, const wchar_t * outputFolder, const wchar_t * selectionFile, int extractAll, int rawOutput, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
+extern "C" __declspec(dllexport) int __stdcall PK2Tools_ExtractPk2W(const wchar_t * pk2File, const wchar_t * outputFolder, const wchar_t * selectionFile, int extractAll, int rawOutput, const wchar_t * blowfishKey, PK2ToolsProgressCallback callback, void * userdata, wchar_t * errorBuffer, int errorChars)
 {
     if(!pk2File || !outputFolder)
     {
@@ -741,7 +720,7 @@ extern "C" __declspec(dllexport) int __stdcall PK2Tools_ExtractPk2W(const wchar_
     }
 
     PK2Reader reader;
-    if(!OpenReaderWithFallback(reader, fs::path(pk2File), error))
+    if(!OpenReaderWithFallback(reader, fs::path(pk2File), NormalizeBlowfishKey(blowfishKey), error))
     {
         CopyError(error, errorBuffer, errorChars);
         return 4;

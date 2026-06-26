@@ -31,26 +31,6 @@ public sealed partial class MainForm : Form
     }
 
 
-
-
-    private string GetCurrentPk2BlowfishKey()
-    {
-        var key = _pk2BlowfishKeyBox.Text.Trim();
-        if(string.IsNullOrWhiteSpace(key))
-        {
-            key = _settings.Pk2BlowfishKey;
-        }
-        return string.IsNullOrWhiteSpace(key) ? DefaultPk2BlowfishKey : key.Trim();
-    }
-
-
-    private void ApplyCurrentPk2BlowfishKey()
-    {
-        var key = GetCurrentPk2BlowfishKey();
-        _settings.Pk2BlowfishKey = key;
-        NativePk2Tools.Configure(_activeProject, key);
-    }
-
     private void UpdateProgress(long processedBytes, long totalBytes)
     {
         if(totalBytes <= 0)
@@ -178,7 +158,7 @@ public sealed partial class MainForm : Form
                 {
                     item.SubItems.Add(string.Empty);
                 }
-                item.SubItems[3].Text = status;
+                item.SubItems[3].Text = TryResolveTranslationKey(status, out var statusKey) ? T(statusKey) : status;
                 item.EnsureVisible();
                 _builderQueueList.Refresh();
                 return;
@@ -246,10 +226,8 @@ public sealed partial class MainForm : Form
         _builderOutputFolderBox.Enabled = !_busy;
         _browseBuilderOutputButton.Enabled = !_busy;
         _builderQueueList.Enabled = true;
-        _builderEncryptEntriesBox.Checked = false;
-        _builderEncryptPayloadsBox.Checked = false;
-        _builderEncryptEntriesBox.Enabled = false;
-        _builderEncryptPayloadsBox.Enabled = false;
+        _builderEncryptEntriesBox.Enabled = !_busy;
+        _builderEncryptPayloadsBox.Enabled = !_busy;
         _builderRefreshButton.Enabled = !_busy;
         _builderBuildButton.Enabled = !_busy && GetSelectedBuilderJobs().Length > 0;
 

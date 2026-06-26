@@ -56,7 +56,8 @@ public sealed partial class MainForm : Form
     {
         Processed,
         AlreadyEncrypted,
-        NotEncrypted
+        NotEncrypted,
+        SkippedPlainType
     }
 
 
@@ -89,6 +90,24 @@ public sealed partial class MainForm : Form
             0xF7, 0x5C, 0xA1, 0x29, 0xD0, 0x84, 0xEE, 0x63,
             0x16, 0x9B, 0x37, 0xC5, 0x48, 0xFA, 0x02, 0xB1
         };
+
+        private static bool IsPlainTypeFile(string path)
+        {
+            try
+            {
+                var info = new FileInfo(path);
+                if(!string.Equals(info.Name, "type.txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                return string.Equals(info.Directory?.Name, "Media", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         public static bool IsEncrypted(string path, out ulong originalSize)
         {
@@ -134,6 +153,12 @@ public sealed partial class MainForm : Form
 
         public static CryptoFileResult EncryptFileInPlace(string path, IProgress<long> progress)
         {
+            if(IsPlainTypeFile(path))
+            {
+                progress.Report(GetLength(path));
+                return CryptoFileResult.SkippedPlainType;
+            }
+
             if(IsEncrypted(path, out _))
             {
                 progress.Report(GetLength(path));

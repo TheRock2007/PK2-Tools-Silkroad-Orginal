@@ -13,8 +13,6 @@ namespace PK2Encryptor;
 
 public sealed partial class MainForm : Form
 {
-    private const string DefaultPk2BlowfishKey = "169841";
-
     #region Shared UI state
 
     private sealed class ThemeProfile
@@ -169,8 +167,7 @@ public sealed partial class MainForm : Form
     private readonly Label _detailLabel = new();
     private readonly Label _summaryLabel = new();
     private readonly ComboBox _themeBox = new ModernComboBox();
-    private readonly TextBox _pk2BlowfishKeyBox = new();
-    private readonly Label _activeProjectLabel = new();
+    private readonly TextBox _blowfishKeyBox = new();
     private readonly List<ModernButton> _navButtons = new();
     private readonly List<ModernButton> _modeButtons = new();
     private readonly List<Control> _cards = new();
@@ -180,7 +177,6 @@ public sealed partial class MainForm : Form
     private readonly List<Button> _successButtons = new();
     private readonly List<Button> _dangerButtons = new();
 
-    private readonly ProjectProfile _activeProject;
     private CancellationTokenSource? _cancelSource;
     private bool _busy;
     private long _lastNativeUiRefreshTicks;
@@ -199,17 +195,10 @@ public sealed partial class MainForm : Form
 
     #region Form bootstrap
 
-    public MainForm(ProjectProfile activeProject)
+    public MainForm()
     {
-        _activeProject = activeProject;
         LoadAppSettings();
-        _settings.SelectedProjectCode = activeProject.Code;
-        Text = $"{T("PK2 Tools")} - {activeProject.DisplayName}";
-        if(string.IsNullOrWhiteSpace(_settings.Pk2BlowfishKey))
-        {
-            _settings.Pk2BlowfishKey = DefaultPk2BlowfishKey;
-        }
-        NativePk2Tools.Configure(activeProject, GetCurrentPk2BlowfishKey());
+        Text = T("PK2 Tools");
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(1450, 860);
         Size = new Size(1600, 980);
@@ -222,6 +211,44 @@ public sealed partial class MainForm : Form
         ApplyLanguage();
         SaveAppSettings();
         RefreshActionState();
+        ApplyImmersiveTitleBar();
+    }
+
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        ApplyImmersiveTitleBar();
+    }
+
+    private void ApplyImmersiveTitleBar()
+    {
+        if(!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        try
+        {
+            var dark = _theme.IsDark ? 1 : 0;
+            _ = DwmSetWindowAttribute(Handle, 20, ref dark, sizeof(int));
+            _ = DwmSetWindowAttribute(Handle, 19, ref dark, sizeof(int));
+        }
+        catch
+        {
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
+    private string CurrentBlowfishKey
+    {
+        get
+        {
+            var key = _blowfishKeyBox.Text.Trim();
+            return string.IsNullOrWhiteSpace(key) ? "169841" : key;
+        }
     }
 
     #endregion

@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PK2 Tools", "PK2Encryptor\P
 		{1EFDFA72-3AFB-4383-935F-43E5B83D1CD6} = {1EFDFA72-3AFB-4383-935F-43E5B83D1CD6}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GFXFileManager", "GFXFileManager.vcxproj", "{1EFDFA72-3AFB-4383-935F-43E5B83D1CD6}"
+Project("{BC8A1FFA-BEE3-4634-8014-F334798102B3}") = "GFXFileManager", "GFXFileManager.vcxproj", "{1EFDFA72-3AFB-4383-935F-43E5B83D1CD6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
