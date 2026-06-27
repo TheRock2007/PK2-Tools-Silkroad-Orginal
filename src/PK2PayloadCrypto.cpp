@@ -119,9 +119,10 @@ void PK2PayloadCrypto_Initialize()
 
 bool PK2PayloadCrypto_ShouldDecrypt(const std::string& path)
 {
-    // Keep Media\type.txt readable/plain inside every PK2.
-    // In Media.pk2 this may appear internally as either Media\type.txt or type.txt.
-    // All other payloads can be protected and will be decrypted at runtime.
+    // Return false for files that must stay plain/readable even when PK2 payload
+    // encryption is enabled. Media.pk2 paths may be stored either with the
+    // leading "Media\" folder or directly from the PK2 root, so both forms are
+    // normalized to the same relative path before matching.
     std::string normalized = path;
     std::replace(normalized.begin(), normalized.end(), '/', '\\');
     std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char ch)
@@ -132,7 +133,76 @@ bool PK2PayloadCrypto_ShouldDecrypt(const std::string& path)
     {
         normalized.erase(normalized.begin());
     }
-    return normalized != "media\\type.txt" && normalized != "type.txt";
+
+    std::string mediaRelative = normalized;
+    const std::string mediaPrefix = "media\\";
+    if(mediaRelative.rfind(mediaPrefix, 0) == 0)
+    {
+        mediaRelative.erase(0, mediaPrefix.length());
+    }
+
+    auto startsWith = [](const std::string& value, const std::string& prefix)
+    {
+        return value.rfind(prefix, 0) == 0;
+    };
+
+    if(startsWith(mediaRelative, "config\\") ||
+       startsWith(mediaRelative, "external\\") ||
+       startsWith(mediaRelative, "fonts\\"))
+    {
+        return false;
+    }
+
+    if(mediaRelative == "type.txt" ||
+       mediaRelative == "gateport.txt" ||
+       mediaRelative == "divisioninfo.txt" ||
+       mediaRelative == "sv.t")
+    {
+        return false;
+    }
+
+    const std::string textDataPrefix = "server_dep\\silkroad\\textdata\\";
+    if(startsWith(mediaRelative, textDataPrefix))
+    {
+        const std::string fileName = mediaRelative.substr(textDataPrefix.length());
+        static const char* plainTextDataFiles[] =
+        {
+            "textdata_equip&skill.txt",
+            "textdata_object.txt",
+            "textdataname.txt",
+            "textevent.txt",
+            "texthelp.txt",
+            "textquest.txt",
+            "textquest_otherstring.txt",
+            "textquest_queststring.txt",
+            "textquest_speech&name.txt",
+            "textuisystem.txt",
+            "textzonename.txt"
+        };
+
+        for(const char* baseFile : plainTextDataFiles)
+        {
+            const std::string base(baseFile);
+            if(fileName == base)
+            {
+                return false;
+            }
+
+            const size_t dot = base.rfind(".txt");
+            if(dot != std::string::npos)
+            {
+                const std::string splitPrefix = base.substr(0, dot) + "_";
+                if(startsWith(fileName, splitPrefix) &&
+                   fileName.length() > splitPrefix.length() + 4 &&
+                   fileName.rfind(".txt") == fileName.length() - 4)
+                {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 void PK2PayloadCrypto_DecryptBuffer(char* buffer, int length)

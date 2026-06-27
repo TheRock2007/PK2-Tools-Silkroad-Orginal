@@ -91,22 +91,87 @@ public sealed partial class MainForm : Form
             0x16, 0x9B, 0x37, 0xC5, 0x48, 0xFA, 0x02, 0xB1
         };
 
-        private static bool IsPlainTypeFile(string path)
+        private static bool IsPlainExcludedFile(string path)
         {
             try
             {
-                var info = new FileInfo(path);
-                if(!string.Equals(info.Name, "type.txt", StringComparison.OrdinalIgnoreCase))
+                var normalized = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
+                var parts = normalized.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+                if(parts.Length == 0)
                 {
                     return false;
                 }
 
-                return string.Equals(info.Directory?.Name, "Media", StringComparison.OrdinalIgnoreCase);
+                var fileName = parts[^1];
+                var mediaIndex = Array.LastIndexOf(parts, "media");
+                var relativeParts = mediaIndex >= 0 ? parts.Skip(mediaIndex + 1).ToArray() : parts;
+                var mediaRelative = string.Join('\\', relativeParts);
+
+                if(mediaRelative.StartsWith("config\\", StringComparison.OrdinalIgnoreCase) ||
+                   mediaRelative.StartsWith("external\\", StringComparison.OrdinalIgnoreCase) ||
+                   mediaRelative.StartsWith("fonts\\", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Contains("\\media\\config\\", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Contains("\\media\\external\\", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Contains("\\media\\fonts\\", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if(mediaRelative is "type.txt" or "gateport.txt" or "divisioninfo.txt" or "sv.t" ||
+                   fileName is "type.txt" or "gateport.txt" or "divisioninfo.txt" or "sv.t")
+                {
+                    return true;
+                }
+
+                const string textDataPrefix = "server_dep\\silkroad\\textdata\\";
+                if(mediaRelative.StartsWith(textDataPrefix, StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Contains("\\server_dep\\silkroad\\textdata\\", StringComparison.OrdinalIgnoreCase))
+                {
+                    return IsPlainTextDataFile(fileName);
+                }
+
+                return false;
             }
             catch
             {
                 return false;
             }
+        }
+
+        private static bool IsPlainTextDataFile(string fileName)
+        {
+            string[] plainTextDataFiles =
+            {
+                "textdata_equip&skill.txt",
+                "textdata_object.txt",
+                "textdataname.txt",
+                "textevent.txt",
+                "texthelp.txt",
+                "textquest.txt",
+                "textquest_otherstring.txt",
+                "textquest_queststring.txt",
+                "textquest_speech&name.txt",
+                "textuisystem.txt",
+                "textzonename.txt"
+            };
+
+            foreach(var baseFile in plainTextDataFiles)
+            {
+                if(string.Equals(fileName, baseFile, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                var stem = Path.GetFileNameWithoutExtension(baseFile);
+                if(fileName.StartsWith(stem + "_", StringComparison.OrdinalIgnoreCase) &&
+                   fileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) &&
+                   fileName.Length > stem.Length + 5)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static bool IsEncrypted(string path, out ulong originalSize)
@@ -153,7 +218,7 @@ public sealed partial class MainForm : Form
 
         public static CryptoFileResult EncryptFileInPlace(string path, IProgress<long> progress)
         {
-            if(IsPlainTypeFile(path))
+            if(IsPlainExcludedFile(path))
             {
                 progress.Report(GetLength(path));
                 return CryptoFileResult.SkippedPlainType;
